@@ -3,84 +3,12 @@ import {getLatestObjkt, getObjktDetails} from './repository.js'
 async function analyseObjkt() {
     const latestObjktPurchases = await getLatestObjkt()
     for (const objkt of latestObjktPurchases) {
-        let tempArray = await getObjktDetails(objkt.fa_contract, objkt.token.token_id)
+        // let tempArray = await getObjktDetails(objkt.fa_contract, objkt.token.token_id)
+        // console.log(checkAvailability(tempArray))
     }
 }
 
-const mockData = [
-    {
-        event_type: 'mint',
-        event_type_deprecated: 'mint',
-        amount: 12,
-        fa_contract: 'KT1HuJEjq69q2Yo6UR1onS1mpEGefw1V4V9b',
-        price: null,
-        recipient_address: null,
-        timestamp: '2022-11-07T15:32:44+00:00'
-    },
-    {
-        event_type: null,
-        event_type_deprecated: 'list',
-        amount: 10,
-        fa_contract: 'KT1HuJEjq69q2Yo6UR1onS1mpEGefw1V4V9b',
-        price: 4000000,
-        recipient_address: null,
-        timestamp: '2022-11-07T16:04:44+00:00'
-    },
-    {
-        event_type: null,
-        event_type_deprecated: 'ask_purchase',
-        amount: 1,
-        fa_contract: 'KT1HuJEjq69q2Yo6UR1onS1mpEGefw1V4V9b',
-        price: 4000000,
-        recipient_address: 'tz1avi1ePHTJCzpbk15pAD2cQgj943fDP7r9',
-        timestamp: '2022-11-30T15:45:44+00:00'
-    },
-    {
-        event_type: 'transfer',
-        event_type_deprecated: 'transfer',
-        amount: 1,
-        fa_contract: 'KT1HuJEjq69q2Yo6UR1onS1mpEGefw1V4V9b',
-        price: null,
-        recipient_address: 'tz1ibW4sjBmVJEuCnaBzqRcvrU5mzNJfd9Ni',
-        timestamp: '2022-11-30T15:45:44+00:00'
-    },
-    {
-        event_type: null,
-        event_type_deprecated: 'ask_purchase',
-        amount: 1,
-        fa_contract: 'KT1HuJEjq69q2Yo6UR1onS1mpEGefw1V4V9b',
-        price: 4000000,
-        recipient_address: 'tz1dGN7sBvQMSPACh28ZwVWQAi5K5KZkdtNb',
-        timestamp: '2022-12-28T18:07:59+00:00'
-    },
-    {
-        event_type: 'transfer',
-        event_type_deprecated: 'transfer',
-        amount: 1,
-        fa_contract: 'KT1HuJEjq69q2Yo6UR1onS1mpEGefw1V4V9b',
-        price: null,
-        recipient_address: 'tz1dGN7sBvQMSPACh28ZwVWQAi5K5KZkdtNb',
-        timestamp: '2022-12-28T18:07:59+00:00'
-    },
-    {
-        event_type: null,
-        event_type_deprecated: 'ask_purchase',
-        amount: 1,
-        fa_contract: 'KT1HuJEjq69q2Yo6UR1onS1mpEGefw1V4V9b',
-        price: 4000000,
-        recipient_address: 'tz1LVAmuXtZauarKZ11ZmZSQXmHKzLGpdifV',
-        timestamp: '2022-12-28T20:35:14+00:00'
-    },
-    {
-        event_type: 'transfer',
-        event_type_deprecated: 'transfer',
-        amount: 1,
-        fa_contract: 'KT1HuJEjq69q2Yo6UR1onS1mpEGefw1V4V9b',
-        price: null,
-        recipient_address: 'tz1dGN7sBvQMSPACh28ZwVWQAi5K5KZkdtNb',
-        timestamp: '2022-12-28T20:35:14+00:00'
-    }
-];
+const mockData = await getObjktDetails('KT1RJ6PbjHpwc3M5rw5s2Nbmefwbuwbdxton', 131391);
 
 function checkIfIBought(list) {
     for (const listElement of list) {
@@ -92,25 +20,55 @@ function checkIfIBought(list) {
 }
 
 function checkAvailability(history) {
-    let iterator = 0;
-    let amountOfList = 0;
-
-    for (const historyElement of history) {
-        if (historyElement.event_type_deprecated === 'list'){
-            amountOfList = historyElement.amount;
-        }
-        if (historyElement.event_type === 'transfer' && historyElement.event_type_deprecated === 'transfer'){
-            iterator++;
-        }
-    }
-
-    if (amountOfList > 1){
-        if (amountOfList > iterator){
+    if (amountOfListEdition(history) > 1){
+        if (amountOfListEdition(history) > amountOfSoldEdition(history)){
             return true;
         }
     }
     return false
 }
 
-console.log(checkAvailability(mockData))
+function amountOfListEdition(history){
+    let amountOfList = 0;
+    let artist = findArtist(history);
+    for (const historyElement of history) {
+        if (historyElement.event_type_deprecated === 'list' && artist === historyElement.creator_address){
+            amountOfList += historyElement.amount;
+        }
+    }
+    return amountOfList;
+}
+
+function amountOfSoldEdition(history){
+    let iterator = 0;
+    for (const historyElement of history) {
+        if (historyElement.event_type === 'transfer' && historyElement.event_type_deprecated === 'transfer'){
+            iterator++;
+        }
+    }
+    return iterator;
+}
+
+function findArtist(history){
+    let artist = '';
+    for (const historyElement of history) {
+        if (historyElement.event_type_deprecated === 'list'){
+            artist = historyElement.creator_address;
+            return artist;
+        }
+    }
+}
+
+function collectRate(history){
+    for (const historyElement of history) {
+        let date = new Date(historyElement.timestamp)
+        console.log(date.getTime())
+    }
+}
+
+// collectRate(mockData)
+// console.log(amountOfSoldEdition(mockData))
+// console.log(amountOfListEdition(mockData))
+// console.log(findArtist(mockData))
+// console.log(tempArray)
 // analyseObjkt()

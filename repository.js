@@ -45,6 +45,7 @@ export async function getObjktDetails(contract, tokenId) {
             order_by: {timestamp: asc, id: asc}
           ) {
             event_type
+            creator_address
             event_type_deprecated
             amount
             fa_contract
