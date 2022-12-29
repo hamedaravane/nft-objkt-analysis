@@ -4,7 +4,6 @@ async function analyseObjkt() {
     const latestObjktPurchases = await getLatestObjkt()
     for (const objkt of latestObjktPurchases) {
         let tempArray = await getObjktDetails(objkt.fa_contract, objkt.token.token_id)
-        checkAvailability(tempArray)
     }
 }
 
@@ -12,7 +11,7 @@ const mockData = [
     {
         event_type: 'mint',
         event_type_deprecated: 'mint',
-        amount: 10,
+        amount: 12,
         fa_contract: 'KT1HuJEjq69q2Yo6UR1onS1mpEGefw1V4V9b',
         price: null,
         recipient_address: null,
@@ -92,26 +91,26 @@ function checkIfIBought(list) {
     return false
 }
 
-function checkAvailability(list) {
+function checkAvailability(history) {
     let iterator = 0;
-    for (let i = 0; i < list.length; i++) {
-        if (list[i].event_type_deprecated === 'list') {
-            console.log(list[i].amount)
-            if (list[i].amount > 1) {
-                for (let j = 0; j < list.length; j++) {
-                    if (list[j].event_type === 'transfer') {
-                        iterator++;
-                    }
-                }
-                if (list[i].amount > iterator){
-                    console.log('available for buying')
-                } else {
-                    console.log('not available')
-                }
-            }
+    let amountOfList = 0;
+
+    for (const historyElement of history) {
+        if (historyElement.event_type_deprecated === 'list'){
+            amountOfList = historyElement.amount;
+        }
+        if (historyElement.event_type === 'transfer' && historyElement.event_type_deprecated === 'transfer'){
+            iterator++;
         }
     }
+
+    if (amountOfList > 1){
+        if (amountOfList > iterator){
+            return true;
+        }
+    }
+    return false
 }
 
-// checkAvailability(mockData)
-analyseObjkt()
+console.log(checkAvailability(mockData))
+// analyseObjkt()

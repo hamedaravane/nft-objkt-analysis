@@ -11,19 +11,18 @@ export async function getLatestObjkt() {
 
     const getLatestObjktQuery = {
         "query": `query MyQuery {
-  event(
-    order_by: {id: desc, timestamp: desc}
-    limit: 10
-    where: {event_type_deprecated: {_eq: "ask_purchase"}}
-  ) {
-    creator_address
-    fa_contract
-    token {
-      token_id
-    }
-  }
-}
-`
+          event(
+            order_by: {id: desc, timestamp: desc}
+            limit: 10
+            where: {event_type_deprecated: {_eq: "ask_purchase"}}
+          ) {
+            creator_address
+            fa_contract
+            token {
+              token_id
+            }
+          }
+        }`
     }
 
     return axios({
