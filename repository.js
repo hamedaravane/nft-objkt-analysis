@@ -13,7 +13,7 @@ export async function getLatestObjkt() {
         "query": `query MyQuery {
           event(
             order_by: {id: desc, timestamp: desc}
-            limit: 10
+            limit: 60
             where: {event_type_deprecated: {_eq: "ask_purchase"}}
           ) {
             creator_address
@@ -49,9 +49,13 @@ export async function getObjktDetails(contract, tokenId) {
             event_type_deprecated
             amount
             fa_contract
+            id
             price
             recipient_address
             timestamp
+            token {
+              token_id
+            }
           }
         }`
     }
