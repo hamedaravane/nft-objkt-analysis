@@ -6,14 +6,19 @@ async function analyseObjkt() {
         let tempArray = await getObjktDetails(objkt.fa_contract, objkt.token.token_id)
         if (checkIfIBought(tempArray)) {
             if (checkAvailability(tempArray)) {
-                console.log(collectRate(tempArray))
-                console.log('https://objkt.com/asset/' + tempArray[0].fa_contract + '/' + tempArray[0].token.token_id)
+                console.log(`
+----------------------------
+new objkt:
+link: => https://objkt.com/asset/${tempArray[0].fa_contract}/${tempArray[0].token.token_id}
+collect rate: => ${collectRate(tempArray)}
+----------------------------
+                `)
             }
         }
     }
 }
 
-// const mockData = await getObjktDetails('KT1RJ6PbjHpwc3M5rw5s2Nbmefwbuwbdxton', 131391);
+const mockData = await getObjktDetails('KT1RJ6PbjHpwc3M5rw5s2Nbmefwbuwbdxton', 588770);
 
 function checkIfIBought(list) {
     for (const listElement of list) {
@@ -28,7 +33,7 @@ function getListOfPurchaseTimestamps(history) {
     let purchaseTimestamps = [];
     for (const historyElement of history) {
         if (historyElement.event_type_deprecated === 'ask_purchase') {
-            let date = new Date(historyElement.timestamp).getTime();
+            let date = Math.round((new Date(historyElement.timestamp).getTime()) / 1000 / 60);
             purchaseTimestamps.push(date);
         }
     }
@@ -36,10 +41,14 @@ function getListOfPurchaseTimestamps(history) {
 }
 
 function checkAvailability(history) {
-    if (amountOfListEdition(history) > 1) {
-        if (amountOfSoldEdition(history) > 2){
-            if (amountOfListEdition(history) > amountOfSoldEdition(history)) {
-                return true;
+    let listEdition = amountOfListEdition(history)
+    let soldEdition = amountOfSoldEdition(history)
+    if (listEdition > 1) {
+        if (listEdition < 100){
+            if (soldEdition > 2){
+                if (listEdition > soldEdition) {
+                    return true;
+                }
             }
         }
     }
@@ -55,6 +64,16 @@ function amountOfListEdition(history) {
         }
     }
     return amountOfList;
+}
+
+function purchases(history){
+    let amount = 0;
+    for (const historyElement of history){
+        if (historyElement.event_type_deprecated === 'ask_purchase'){
+            amount++;
+        }
+    }
+    return amount;
 }
 
 function amountOfSoldEdition(history) {
@@ -87,7 +106,16 @@ function collectRate(history) {
             iterator++;
         }
     }
-    return Math.floor((sum / purchaseTimestamps.length) * 1000);
+    return Math.floor(sum / (purchaseTimestamps.length - 1));
 }
+
+function soldRate(history){
+    let listEdition = amountOfListEdition(history);
+    let purchase = purchases(history);
+    return purchase / listEdition;
+}
+
+// console.log(collectRate(mockData))
+// setInterval(()=>analyseObjkt(),50000)
 
 analyseObjkt()
