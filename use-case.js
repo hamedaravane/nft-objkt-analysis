@@ -1,24 +1,50 @@
 import {getLatestObjkt, getObjktDetails} from './repository.js'
+import differenceBy from 'lodash/differenceBy.js'
+import isEqual from 'lodash/isEqual.js'
+
+
+let final = [];
 
 async function analyseObjkt() {
     const latestObjktPurchases = await getLatestObjkt()
-    for (const objkt of latestObjktPurchases) {
-        let tempArray = await getObjktDetails(objkt.fa_contract, objkt.token.token_id)
-        if (checkIfIBought(tempArray)) {
-            if (checkAvailability(tempArray)) {
-                console.log(`
-----------------------------
-new objkt:
-link: => https://objkt.com/asset/${tempArray[0].fa_contract}/${tempArray[0].token.token_id}
-collect rate: => ${collectRate(tempArray)}
-----------------------------
-                `)
+    const result = [];
+    let resultObjkt;
+    if (latestObjktPurchases.length > 0) {
+        for (const objkt of latestObjktPurchases) {
+            let objktHistory = await getObjktDetails(objkt.fa_contract, objkt.token.token_id)
+            if (checkIfIBought(objktHistory)) {
+                if (checkAvailability(objktHistory)) {
+                    // if (soldRate(objktHistory) > 0.5) {
+                        // if (collectRate(objktHistory) < 100) {
+                            resultObjkt = {
+                                "name": objktHistory[0].token.name,
+                                "royalty": getRoyalty(objktHistory[0].token.royalties),
+                                "price": objktHistory[0].price,
+                                "address": "https://objkt.com/asset/" + objktHistory[0].fa_contract + "/" + objktHistory[0].token.token_id,
+                                "collectRate": collectRate(objktHistory)
+                            }
+                            if (checkObjkts(result, resultObjkt)) {
+                                result.push(resultObjkt);
+                            }
+                        // }
+                    // }
+                }
             }
+        }
+    }
+    console.log(final)
+    console.log(result)
+    let tempArr = differenceBy(result, final, 'address' || 'collectRate');
+    console.log(tempArr)
+    if (tempArr.length > 0) {
+        for (const tempArrElement of tempArr) {
+            final.push(tempArrElement)
+            console.log(tempArrElement)
         }
     }
 }
 
-const mockData = await getObjktDetails('KT1RJ6PbjHpwc3M5rw5s2Nbmefwbuwbdxton', 588770);
+// const mockData = await getObjktDetails('KT1BMYT898FdtVPABmpjeW5ZTUWh8cZs8AXv', 0);
 
 function checkIfIBought(list) {
     for (const listElement of list) {
@@ -27,6 +53,17 @@ function checkIfIBought(list) {
         }
     }
     return true
+}
+
+function getRoyalty(royalties) {
+    let amount = 0;
+    let decimal = 0;
+    for (const royalty of royalties) {
+        amount += royalty.amount
+        decimal = royalty.decimals
+    }
+    amount = (amount / Math.pow(10, decimal)) * 100;
+    return amount + '%'
 }
 
 function getListOfPurchaseTimestamps(history) {
@@ -44,8 +81,8 @@ function checkAvailability(history) {
     let listEdition = amountOfListEdition(history)
     let soldEdition = amountOfSoldEdition(history)
     if (listEdition > 1) {
-        if (listEdition < 100){
-            if (soldEdition > 2){
+        if (listEdition < 100) {
+            if (soldEdition > 2) {
                 if (listEdition > soldEdition) {
                     return true;
                 }
@@ -66,10 +103,10 @@ function amountOfListEdition(history) {
     return amountOfList;
 }
 
-function purchases(history){
+function purchases(history) {
     let amount = 0;
-    for (const historyElement of history){
-        if (historyElement.event_type_deprecated === 'ask_purchase'){
+    for (const historyElement of history) {
+        if (historyElement.event_type_deprecated === 'ask_purchase') {
             amount++;
         }
     }
@@ -84,6 +121,15 @@ function amountOfSoldEdition(history) {
         }
     }
     return iterator;
+}
+
+function checkObjkts(arr, obj) {
+    for (const arrElement of arr) {
+        if (isEqual(arrElement, obj)) {
+            return false;
+        }
+    }
+    return true;
 }
 
 function findArtist(history) {
@@ -109,13 +155,20 @@ function collectRate(history) {
     return Math.floor(sum / (purchaseTimestamps.length - 1));
 }
 
-function soldRate(history){
+function soldRate(history) {
     let listEdition = amountOfListEdition(history);
     let purchase = purchases(history);
     return purchase / listEdition;
 }
 
 // console.log(collectRate(mockData))
-// setInterval(()=>analyseObjkt(),50000)
+setInterval(() => analyseObjkt(), 60000)
 
-analyseObjkt()
+// analyseObjkt()
+
+let arr1 = [{"id": 23, "name": "a"},{"id": 23, "name": "b"}]
+let arr2 = [{"id": 23, "name": "a"}, {"id": 43, "name": "b"}, {"id": 24, "name": "e"}]
+
+let arr3 = differenceBy(arr1, arr2, 'id' || 'name')
+
+// console.log(arr3)

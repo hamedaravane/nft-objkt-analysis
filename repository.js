@@ -54,7 +54,12 @@ export async function getObjktDetails(contract, tokenId) {
             recipient_address
             timestamp
             token {
+              name
               token_id
+              royalties {
+                amount
+                decimals
+              }
             }
           }
         }`
