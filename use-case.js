@@ -14,28 +14,27 @@ async function analyseObjkt() {
             let objktHistory = await getObjktDetails(objkt.fa_contract, objkt.token.token_id)
             if (checkIfIBought(objktHistory)) {
                 if (checkAvailability(objktHistory)) {
-                    // if (soldRate(objktHistory) > 0.5) {
-                        // if (collectRate(objktHistory) < 100) {
+                    if (soldRate(objktHistory) > 0.5) {
+                        if (collectRate(objktHistory) < 100) {
                             resultObjkt = {
                                 "name": objktHistory[0].token.name,
                                 "royalty": getRoyalty(objktHistory[0].token.royalties),
-                                "price": objktHistory[0].price,
+                                "price": getPrice(objktHistory) + 'ꜩ',
+                                "editions": amountOfListEdition(objktHistory) + '/' + purchases(objktHistory),
                                 "address": "https://objkt.com/asset/" + objktHistory[0].fa_contract + "/" + objktHistory[0].token.token_id,
-                                "collectRate": collectRate(objktHistory)
+                                "collectRate": collectRate(objktHistory) + ' ' + 'minutes per buy',
+                                "soldRate": soldRate(objktHistory)
                             }
                             if (checkObjkts(result, resultObjkt)) {
                                 result.push(resultObjkt);
                             }
-                        // }
-                    // }
+                        }
+                    }
                 }
             }
         }
     }
-    console.log(final)
-    console.log(result)
     let tempArr = differenceBy(result, final, 'address' || 'collectRate');
-    console.log(tempArr)
     if (tempArr.length > 0) {
         for (const tempArrElement of tempArr) {
             final.push(tempArrElement)
@@ -53,6 +52,14 @@ function checkIfIBought(list) {
         }
     }
     return true
+}
+
+function getPrice(history){
+    for (const historyElement of history) {
+        if (historyElement.event_type_deprecated === 'ask_purchase'){
+            return historyElement.price / 1000000
+        }
+    }
 }
 
 function getRoyalty(royalties) {
@@ -79,7 +86,7 @@ function getListOfPurchaseTimestamps(history) {
 
 function checkAvailability(history) {
     let listEdition = amountOfListEdition(history)
-    let soldEdition = amountOfSoldEdition(history)
+    let soldEdition = purchases(history)
     if (listEdition > 1) {
         if (listEdition < 100) {
             if (soldEdition > 2) {
@@ -99,6 +106,9 @@ function amountOfListEdition(history) {
         if (historyElement.event_type_deprecated === 'list' && artist === historyElement.creator_address) {
             amountOfList += historyElement.amount;
         }
+        if (historyElement.event_type_deprecated === 'cancel_list' && artist === historyElement.creator_address){
+            amountOfList -= historyElement.amount;
+        }
     }
     return amountOfList;
 }
@@ -113,11 +123,13 @@ function purchases(history) {
     return amount;
 }
 
-function amountOfSoldEdition(history) {
+function amountOfTransfers(history) {
     let iterator = 0;
     for (const historyElement of history) {
         if (historyElement.event_type === 'transfer' && historyElement.event_type_deprecated === 'transfer') {
-            iterator++;
+            if (historyElement.creator_address === findArtist(history)){
+                iterator++;
+            }
         }
     }
     return iterator;
@@ -165,10 +177,3 @@ function soldRate(history) {
 setInterval(() => analyseObjkt(), 60000)
 
 // analyseObjkt()
-
-let arr1 = [{"id": 23, "name": "a"},{"id": 23, "name": "b"}]
-let arr2 = [{"id": 23, "name": "a"}, {"id": 43, "name": "b"}, {"id": 24, "name": "e"}]
-
-let arr3 = differenceBy(arr1, arr2, 'id' || 'name')
-
-// console.log(arr3)
